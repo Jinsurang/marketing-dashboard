@@ -34,8 +34,7 @@ import {
   Sparkles,
   List,
   Settings,
-  Users,
-  Edit2
+  Users
 } from 'lucide-react';
 import {
   Chart as ChartJS,
