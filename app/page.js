@@ -510,7 +510,7 @@ export default function MarketingDashboard() {
       await fetch('/api/save', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ month: 'settings', data: { mainManager: newManager, leadDeveloper: newDeveloper } })
+        body: JSON.stringify({ month: 'config', data: { mainManager: newManager, leadDeveloper: newDeveloper } })
       });
     } catch (err) {
       console.error("Failed to save settings", err);
