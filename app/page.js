@@ -485,7 +485,7 @@ export default function MarketingDashboard() {
     async function loadAllData() {
       setIsLoading(true);
       try {
-        const res = await fetch(`/api/data`); // No month param means all data
+        const res = await fetch('/api/data', { cache: 'no-store' }); // No month param means all data
         const data = await res.json();
         setAllData(data || {});
 
