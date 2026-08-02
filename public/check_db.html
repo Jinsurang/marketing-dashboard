@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <title>DB 진단 도구</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 2rem;
+            max-width: 800px;
+            margin: 0 auto;
+            background: #f0f0f0;
+        }
+
+        .card {
+            background: white;
+            padding: 2rem;
+            border-radius: 1rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-bottom: 1rem;
+        }
+
+        h1 {
+            color: #333;
+        }
+
+        pre {
+            background: #333;
+            color: #0f0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+        }
+
+        .status {
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            font-weight: bold;
+            display: inline-block;
+        }
+
+        .success {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 0.5rem;
+            cursor: pointer;
+            font-size: 1rem;
+        }
+
+        button:hover {
+            background: #1d4ed8;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="card">
+        <h1>🕵️‍♂️ 데이터베이스 진단</h1>
+        <p>아래 버튼을 누르면 Supabase에 직접 접속해서 데이터가 있는지 확인합니다.</p>
+        <button onclick="checkDB()">데이터 확인하기</button>
+    </div>
+
+    <div class="card" id="resultCard" style="display:none;">
+        <h3>진단 결과</h3>
+        <div id="status"></div>
+        <pre id="output">대기 중...</pre>
+    </div>
+
+    <script>
+        // 사용자가 제공한 키 사용
+        const url = 'https://zkdzjqykotlkmvtcznsg.supabase.co';
+        const key = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InprZHpqcXlrb3Rsa212dGN6bnNnIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc2OTQ0MzU0NywiZXhwIjoyMDg1MDE5NTQ3fQ.E_o3tgethU0VEWhXUUPFdBQEyT5IQ41zkegiG007ORQ';
+
+        const supabase = window.supabase.createClient(url, key);
+
+        async function checkDB() {
+            const output = document.getElementById('output');
+            const status = document.getElementById('status');
+            const card = document.getElementById('resultCard');
+
+            card.style.display = 'block';
+            output.textContent = "데이터 조회 중...";
+
+            try {
+                const { data, error } = await supabase
+                    .from('marketing_data')
+                    .select('*')
+                    .order('created_at', { ascending: false });
+
+                if (error) throw error;
+
+                if (data.length === 0) {
+                    status.innerHTML = '<span class="status error">❌ 데이터가 없습니다 (0건)</span>';
+                    output.textContent = "테이블('marketing_data')이 비어있습니다.\n저장이 아예 안 되고 있는 상태입니다.";
+                } else {
+                    status.innerHTML = `<span class="status success">✅ 데이터 발견됨 (${data.length}건)</span>`;
+                    output.textContent = JSON.stringify(data, null, 2);
+                }
+            } catch (err) {
+                status.innerHTML = '<span class="status error">❌ 연결 실패</span>';
+                output.textContent = "에러 내용:\n" + JSON.stringify(err, null, 2);
+            }
+        }
+    </script>
+</body>
+
+</html>

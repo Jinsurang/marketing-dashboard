@@ -1,0 +1,351 @@
+{
+  "2026-01": {
+    "influencer": {},
+    "campaigns": [
+      {
+        "title": "안녕",
+        "campaignId": "",
+        "cost": "15000",
+        "memo": "",
+        "id": 1769362695746,
+        "period": "2026.01.25 ~ 2026.01.25",
+        "platform": "reviewnote",
+        "active": true
+      },
+      {
+        "title": "기존",
+        "campaignId": "",
+        "cost": "5000",
+        "memo": "",
+        "id": 1769362746535,
+        "period": "2026.01.22 ~ 2026.01.22",
+        "platform": "smartplace",
+        "active": false
+      },
+      {
+        "title": "신림와인",
+        "campaignId": "",
+        "cost": "200000",
+        "memo": "",
+        "id": 1769400691920,
+        "period": "2026.01.23 ~ 2026.01.24",
+        "platform": "smartplace",
+        "active": false
+      },
+      {
+        "title": "체험단",
+        "campaignId": "",
+        "cost": "100000",
+        "memo": "",
+        "id": 1769400728291,
+        "period": "2026.01.23 ~ 2026.01.23",
+        "platform": "reviewnote",
+        "active": false
+      },
+      {
+        "title": "작따 공연영상",
+        "campaignId": "",
+        "cost": "50000",
+        "memo": "",
+        "id": 1769400739696,
+        "period": "2026.01.23 ~ 2026.01.23",
+        "platform": "meta",
+        "active": false
+      },
+      {
+        "title": "블로그 2_수랑님",
+        "campaignId": "",
+        "cost": "5000",
+        "memo": "",
+        "id": 1769402925666,
+        "period": "2026.01.02 ~ 2026.01.02",
+        "platform": "reviewnote",
+        "active": false
+      },
+      {
+        "title": "wlstntrtr",
+        "campaignId": "",
+        "cost": "50000",
+        "memo": "",
+        "channelType": "blog",
+        "id": 1769435971060,
+        "period": "2026.01.21 ~ 2026.01.21",
+        "platform": "hyupchan",
+        "active": false
+      },
+      {
+        "title": "@witjinsu",
+        "campaignId": "",
+        "cost": "50000",
+        "memo": "",
+        "channelType": "instagram",
+        "period": "2026.01.09 ~ 2026.01.09",
+        "platform": "hyupchan",
+        "active": false,
+        "id": 0.6885696202475894
+      },
+      {
+        "title": "블로고",
+        "campaignId": "",
+        "cost": "10000",
+        "memo": "",
+        "period": "2026.01.09 ~ 2026.01.09",
+        "platform": "hyupchan",
+        "active": false,
+        "channelType": "blog",
+        "id": 0.026704605722051467
+      },
+      {
+        "title": "123",
+        "campaignId": "",
+        "cost": "141252",
+        "memo": "",
+        "period": "2026.01.05 ~ 2026.01.05",
+        "platform": "smartplace",
+        "active": false,
+        "id": 0.21226793379516518
+      },
+      {
+        "title": "5555",
+        "campaignId": "",
+        "cost": "12412",
+        "memo": "",
+        "id": 1769442896811,
+        "period": "2026.01.05 ~ 2026.01.05",
+        "platform": "smartplace",
+        "active": false
+      },
+      {
+        "title": "141255",
+        "campaignId": "",
+        "cost": "52326",
+        "memo": "",
+        "id": 1769442958409,
+        "period": "2026.01.07 ~ 2026.01.07",
+        "platform": "smartplace",
+        "active": false
+      },
+      {
+        "title": "수랑",
+        "campaignId": "",
+        "cost": "5969",
+        "memo": "",
+        "ctr": "2.1",
+        "period": "2026.01.06 ~ 2026.01.06",
+        "platform": "smartplace",
+        "active": false,
+        "id": 0.3159389933970729
+      },
+      {
+        "title": "41512",
+        "campaignId": "",
+        "cost": "15211",
+        "memo": "",
+        "id": 1769443012012,
+        "period": "2026.01.08 ~ 2026.01.08",
+        "platform": "meta",
+        "active": false
+      },
+      {
+        "title": "수랑진",
+        "campaignId": "",
+        "cost": "10000",
+        "memo": "",
+        "period": "2026.01.25 ~ 2026.01.29",
+        "platform": "smartplace",
+        "active": true,
+        "id": 0.21679198933880417
+      }
+    ],
+    "smartplace": {
+      "2026-01-25": {
+        "cost": 10000,
+        "campaign_count": 1,
+        "exposure": 0,
+        "click": 0,
+        "call": 8,
+        "review": 5,
+        "hq_exposure": 4535,
+        "dorim_exposure": 4574
+      },
+      "2026-01-22": {
+        "cost": 5000,
+        "campaign_count": 1
+      },
+      "2026-01-07": {
+        "exposure": 2000,
+        "click": 500,
+        "call": 7,
+        "cost": 52326,
+        "campaign_count": 1,
+        "ctr": 5.5
+      },
+      "2026-01-14": {
+        "review": 5,
+        "cost": 0,
+        "campaign_count": 0
+      },
+      "2026-01-21": {
+        "review": 5,
+        "cost": 0,
+        "campaign_count": 0
+      },
+      "2026-01-08": {
+        "review": 18,
+        "cost": 0,
+        "campaign_count": 0
+      },
+      "2026-01-23": {
+        "cost": 200000,
+        "campaign_count": 1
+      },
+      "2026-01-06": {
+        "cost": 5969,
+        "campaign_count": 1,
+        "ctr": 22
+      },
+      "2026-01-05": {
+        "ctr": 2.1,
+        "cost": 153664,
+        "campaign_count": 2
+      }
+    },
+    "reviewnote": {
+      "2026-01-25": {
+        "cost": 15000,
+        "campaign_count": 1
+      },
+      "2026-01-23": {
+        "cost": 100000,
+        "campaign_count": 1
+      },
+      "2026-01-02": {
+        "cost": 5000,
+        "campaign_count": 1
+      }
+    },
+    "catchtable": {
+      "2026-01-07": {
+        "visit": 50,
+        "reservation": 12,
+        "walkin": 12
+      },
+      "2026-01-14": {
+        "review": 5
+      },
+      "2026-01-21": {
+        "review": 1
+      },
+      "2026-01-08": {
+        "review": 38,
+        "reservation": 0,
+        "walkin": 0
+      },
+      "2026-01-25": {
+        "reservation": 26,
+        "cancel": 7,
+        "review": 2,
+        "walkin": 77
+      }
+    },
+    "toss": {
+      "2026-01-25": {
+        "revenue": 3266700,
+        "visitor": 25
+      },
+      "2026-01-24": {
+        "revenue": 5000000,
+        "visitor": 60
+      },
+      "2026-01-19": {
+        "dinner_revenue": 3379591,
+        "cafe_revenue": 120409
+      },
+      "2026-01-20": {
+        "dinner_revenue": 512978,
+        "cafe_revenue": 19241
+      },
+      "2026-01-01": {
+        "dinner_revenue": 4400000,
+        "cafe_revenue": 600000
+      },
+      "2026-01-02": {
+        "cafe_revenue": 600000,
+        "dinner_revenue": 4400000
+      },
+      "2026-01-26": {
+        "dinner_revenue": 235611
+      }
+    },
+    "meta": {
+      "2026-01-23": {
+        "cost": 50000,
+        "campaign_count": 1
+      },
+      "2026-01-08": {
+        "ctr": 1.7,
+        "cost": 15211,
+        "campaign_count": 1
+      }
+    },
+    "hyupchan": {
+      "2026-01-09": {
+        "cost": 60000,
+        "campaign_count": 2
+      },
+      "2026-01-21": {
+        "cost": 50000,
+        "campaign_count": 1
+      }
+    }
+  },
+  "2025-12": {
+    "campaigns": [
+      {
+        "title": "123",
+        "campaignId": "",
+        "cost": "10000",
+        "memo": "",
+        "id": 1769363153665,
+        "period": "2025.12.25 ~ 2025.12.25",
+        "platform": "smartplace",
+        "active": false
+      }
+    ],
+    "smartplace": {
+      "2025-12-25": {
+        "cost": 10000,
+        "campaign_count": 1
+      },
+      "2025-12-02": {
+        "hq_exposure": 313,
+        "dorim_exposure": 111
+      }
+    },
+    "toss": {
+      "2025-12-25": {
+        "revenue": 5000000
+      }
+    },
+    "catchtable": {
+      "2025-12-18": {
+        "reservation": 12,
+        "walkin": 12
+      }
+    }
+  },
+  "2025-09": {
+    "smartplace": {
+      "2025-09-02": {
+        "hq_exposure": 124121
+      }
+    }
+  },
+  "2025-10": {
+    "smartplace": {
+      "2025-10-09": {
+        "hq_exposure": 4412
+      }
+    }
+  }
+}

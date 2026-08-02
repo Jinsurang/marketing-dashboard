@@ -44,3 +44,5 @@ next-env.d.ts
 legacy_v1/browser_session/
 legacy_v1/__pycache__/
 legacy_v1/*-marketing_Data/
+public/dashboard_icon.png
+.legacy_v1_backup/
