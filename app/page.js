@@ -34,7 +34,8 @@ import {
   Sparkles,
   List,
   Settings,
-  Users
+  Users,
+  Edit2
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -492,9 +493,9 @@ export default function MarketingDashboard() {
         const currentMonthData = data[currentMonth] || {};
         setMonthlyData(currentMonthData);
 
-        if (data['settings']) {
-          if (data['settings'].mainManager) setMainManager(data['settings'].mainManager);
-          if (data['settings'].leadDeveloper) setLeadDeveloper(data['settings'].leadDeveloper);
+        if (data['config']) {
+          if (data['config'].mainManager) setMainManager(data['config'].mainManager);
+          if (data['config'].leadDeveloper) setLeadDeveloper(data['config'].leadDeveloper);
         }
       } catch (err) {
         console.error("Failed to load data", err);
@@ -2673,7 +2674,10 @@ export default function MarketingDashboard() {
                   className="text-xs font-black text-gray-900 bg-gray-100 rounded px-2 py-0.5 w-20 text-right outline-none focus:ring-1 focus:ring-blue-500"
                 />
               ) : (
-                <span onClick={() => setIsEditingManager(true)} className="text-xs font-black text-gray-900 cursor-pointer hover:text-blue-500 transition-colors" title="클릭하여 수정">{mainManager}</span>
+                <div onClick={() => setIsEditingManager(true)} className="flex items-center gap-1 cursor-pointer group" title="클릭하여 수정">
+                  <span className="text-xs font-black text-gray-900 group-hover:text-blue-500 transition-colors">{mainManager}</span>
+                  <Edit2 className="w-3 h-3 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                </div>
               )}
             </div>
             <div className="flex flex-col items-end border-l border-gray-100 pl-8">
@@ -2689,7 +2693,10 @@ export default function MarketingDashboard() {
                   className="text-xs font-black text-gray-900 bg-gray-100 rounded px-2 py-0.5 w-20 text-right outline-none focus:ring-1 focus:ring-blue-500"
                 />
               ) : (
-                <span onClick={() => setIsEditingDeveloper(true)} className="text-xs font-black text-gray-900 cursor-pointer hover:text-blue-500 transition-colors" title="클릭하여 수정">{leadDeveloper}</span>
+                <div onClick={() => setIsEditingDeveloper(true)} className="flex items-center gap-1 cursor-pointer group" title="클릭하여 수정">
+                  <span className="text-xs font-black text-gray-900 group-hover:text-blue-500 transition-colors">{leadDeveloper}</span>
+                  <Edit2 className="w-3 h-3 text-gray-300 group-hover:text-blue-500 transition-colors" />
+                </div>
               )}
             </div>
           </div>
