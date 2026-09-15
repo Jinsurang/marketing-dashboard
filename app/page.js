@@ -176,6 +176,11 @@ export default function MarketingDashboard() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [targetDate, setTargetDate] = useState(formatDate(new Date()));
 
+  // --- Weekly AI Insight Report (stored under the 'report' key, written by the AI agent) ---
+  const [aiReport, setAiReport] = useState({ html: '', periodStart: '', periodEnd: '' });
+  const [isReportEditorOpen, setIsReportEditorOpen] = useState(false);
+  const [reportDraft, setReportDraft] = useState({ html: '', periodStart: '', periodEnd: '' });
+
   // --- Staging State (Inside Modal) ---
   const [quickCampaigns, setQuickCampaigns] = useState({});
   const [quickNumeric, setQuickNumeric] = useState({});
@@ -496,6 +501,13 @@ export default function MarketingDashboard() {
           if (data['config'].mainManager) setMainManager(data['config'].mainManager);
           if (data['config'].leadDeveloper) setLeadDeveloper(data['config'].leadDeveloper);
         }
+        if (data['report']) {
+          setAiReport({
+            html: data['report'].html || '',
+            periodStart: data['report'].periodStart || '',
+            periodEnd: data['report'].periodEnd || ''
+          });
+        }
       } catch (err) {
         console.error("Failed to load data", err);
       } finally {
@@ -514,6 +526,31 @@ export default function MarketingDashboard() {
       });
     } catch (err) {
       console.error("Failed to save settings", err);
+    }
+  };
+
+  const openReportEditor = () => {
+    setReportDraft({ ...aiReport });
+    setIsReportEditorOpen(true);
+  };
+
+  const saveAiReport = async () => {
+    const payload = { ...reportDraft, updatedAt: new Date().toISOString() };
+    try {
+      const res = await fetch('/api/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ month: 'report', data: payload })
+      });
+      if (!res.ok) {
+        const errData = await res.json().catch(() => ({}));
+        alert(`❌ 리포트 저장 실패: ${errData.error || res.status}`);
+        return;
+      }
+      setAiReport(reportDraft);
+      setIsReportEditorOpen(false);
+    } catch (err) {
+      alert(`리포트 저장 중 네트워크 오류가 발생했습니다: ${err.message}`);
     }
   };
 
@@ -1124,6 +1161,66 @@ export default function MarketingDashboard() {
             >
               <Edit2 className="w-4 h-4" /> 내용 수정하기
             </button>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderReportEditorModal = () => {
+    if (!isReportEditorOpen) return null;
+    return (
+      <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsReportEditorOpen(false)}></div>
+        <div className="bg-white rounded-[40px] w-full max-w-5xl shadow-2xl relative animate-in zoom-in-95 duration-200 overflow-hidden max-h-[90vh] flex flex-col">
+          <div className="p-8 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+            <div className="flex items-center gap-4">
+              <div className="p-3 bg-gray-900 text-white rounded-2xl"><Sparkles className="w-6 h-6" /></div>
+              <div>
+                <h3 className="text-xl font-bold text-gray-900">주간 AI 인사이트 리포트 편집</h3>
+                <p className="text-sm text-gray-400 font-medium">HTML로 작성된 내용이 종합분석 탭 하단에 그대로 표시됩니다</p>
+              </div>
+            </div>
+            <button onClick={() => setIsReportEditorOpen(false)} className="p-2 hover:bg-gray-100 rounded-full transition-colors"><X className="w-6 h-6" /></button>
+          </div>
+
+          <div className="p-8 overflow-y-auto flex-1 space-y-6">
+            <div className="flex flex-wrap items-center gap-4">
+              <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">수집기간</span>
+              <input type="date" value={reportDraft.periodStart} max={reportDraft.periodEnd || undefined}
+                onChange={e => setReportDraft(prev => ({ ...prev, periodStart: e.target.value }))}
+                className="bg-gray-50 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" />
+              <span className="text-gray-300">~</span>
+              <input type="date" value={reportDraft.periodEnd} min={reportDraft.periodStart || undefined}
+                onChange={e => setReportDraft(prev => ({ ...prev, periodEnd: e.target.value }))}
+                className="bg-gray-50 rounded-xl px-4 py-2.5 text-sm font-bold text-gray-900 outline-none focus:ring-2 focus:ring-blue-500" />
+            </div>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-gray-400 ml-1">리포트 HTML</span>
+                <textarea
+                  value={reportDraft.html}
+                  onChange={e => setReportDraft(prev => ({ ...prev, html: e.target.value }))}
+                  spellCheck={false}
+                  placeholder={'<h5>이번 주 요약</h5>\n<p>광고 효율이 지난주 대비 ...</p>'}
+                  className="w-full h-[360px] p-4 rounded-2xl bg-gray-50 border-none font-mono text-xs text-gray-900 focus:bg-white focus:ring-2 focus:ring-blue-500 outline-none resize-none shadow-inner"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold text-gray-400 ml-1">미리보기</span>
+                <div className="h-[360px] overflow-y-auto rounded-2xl bg-gradient-to-br from-gray-900 to-gray-800 p-6 text-gray-200 text-sm leading-relaxed font-medium">
+                  {reportDraft.html
+                    ? <div className="ai-report-body" dangerouslySetInnerHTML={{ __html: reportDraft.html }} />
+                    : <p className="text-gray-500 text-center py-10">HTML을 입력하면 여기에 미리보기가 표시됩니다.</p>}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="p-8 bg-gray-50/50 border-t border-gray-100 flex justify-end gap-3">
+            <button onClick={() => setIsReportEditorOpen(false)} className="px-6 py-3 font-bold text-gray-500 hover:bg-gray-100 rounded-2xl transition-all">취소</button>
+            <button onClick={saveAiReport} className="px-10 py-3 bg-gray-900 text-white font-bold rounded-2xl shadow-xl shadow-gray-200 hover:bg-black transition-all hover:-translate-y-0.5 flex items-center gap-2"><Save className="w-4 h-4" /> 리포트 저장</button>
           </div>
         </div>
       </div>
@@ -1932,12 +2029,25 @@ export default function MarketingDashboard() {
 
         <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-[32px] p-8 text-white relative overflow-hidden flex flex-col justify-center">
           <div className="absolute top-0 right-0 p-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
-          <div className="flex items-center gap-3 mb-4">
-            <div className="bg-blue-600 p-2 rounded-xl"><Sparkles className="w-4 h-4" /></div>
-            <h4 className="text-lg font-bold">AI 인사이트 리포트</h4>
+          <div className="flex justify-between items-start mb-4 gap-4">
+            <div className="flex items-center gap-3">
+              <div className="bg-blue-600 p-2 rounded-xl"><Sparkles className="w-4 h-4" /></div>
+              <div>
+                <h4 className="text-lg font-bold">주간 AI 인사이트 리포트</h4>
+                <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
+                  수집기간 · {aiReport.periodStart && aiReport.periodEnd ? `${aiReport.periodStart} ~ ${aiReport.periodEnd}` : '미설정'}
+                </p>
+              </div>
+            </div>
+            <button onClick={openReportEditor} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all shrink-0" title="리포트 HTML 편집">
+              <Edit2 className="w-4 h-4" />
+            </button>
           </div>
-          <p className="text-gray-400 text-sm leading-relaxed mb-6 font-medium">현재 {currentMonth.split('-')[1]}월 광고 효율이 지난달 대비 12% 상승했습니다. 특히 인스타그램 인플루언서 캠페인이 매출 전환의 30%를 견인하고 있습니다.</p>
-          <button className="w-full py-4 bg-white/10 hover:bg-white/20 rounded-2xl text-xs font-black tracking-widest uppercase transition-all border border-white/10">상세 분석 보고서 보기</button>
+          {aiReport.html ? (
+            <div className="ai-report-body text-gray-200 text-sm leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: aiReport.html }} />
+          ) : (
+            <p className="text-gray-500 text-sm font-medium py-6 text-center border border-dashed border-white/10 rounded-2xl">아직 작성된 리포트가 없습니다. 편집 버튼을 눌러 HTML을 입력하세요.</p>
+          )}
         </div>
       </div>
     );
@@ -2761,6 +2871,7 @@ export default function MarketingDashboard() {
         {renderInputModal()}
         {renderHistoryModal()}
         {renderUrlModal()}
+        {renderReportEditorModal()}
 
       </div>
     </div>
