@@ -2671,7 +2671,8 @@ export default function MarketingDashboard() {
   };
 
   const renderCampaignList = () => {
-    const campaigns = monthlyData.campaigns || [];
+    const campaigns = [...(monthlyData.campaigns || [])]
+      .sort((a, b) => (b.period || '').localeCompare(a.period || ''));
     if (campaigns.length === 0) return null;
 
     return (
@@ -2694,7 +2695,7 @@ export default function MarketingDashboard() {
           {campaigns.map((c, idx) => {
             const platform = UI_STRUCTURE.cost.columns.find(p => p.id === c.platform);
             return (
-              <div key={idx} className="bg-white p-6 rounded-[28px] border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
+              <div key={c.id ?? idx} className="bg-white p-6 rounded-[28px] border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-xl transition-all">
                 <div className={`absolute top-0 right-0 w-1.5 h-full ${c.active ? 'bg-emerald-500' : 'bg-gray-200'}`}></div>
                 <div className="flex items-center justify-between mb-4">
                   <div className="flex items-center gap-2">
