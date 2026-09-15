@@ -165,6 +165,11 @@ export default function MarketingDashboard() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedRange, setSelectedRange] = useState('thisMonth'); // thisMonth, today, yesterday, 7d, 90d, 1y
 
+  // --- Custom Report State ---
+  const [reportStartDate, setReportStartDate] = useState('');
+  const [reportEndDate, setReportEndDate] = useState('');
+  const [reportSections, setReportSections] = useState({ sales: true, cost: true, inflow: true, review: true });
+
   // --- Settings State ---
   const [mainManager, setMainManager] = useState('윤세현');
   const [leadDeveloper, setLeadDeveloper] = useState('진수랑');
@@ -199,6 +204,22 @@ export default function MarketingDashboard() {
       } catch (e) { console.error("Failed to load URLs", e); }
     }
   }, []);
+
+  // Default the report range to "this month so far" whenever the visible month changes
+  useEffect(() => {
+    const [y, m] = currentMonth.split('-').map(Number);
+    const now = new Date();
+    const utc = now.getTime() + (now.getTimezoneOffset() * 60000);
+    const kstNow = new Date(utc + (9 * 60 * 60000));
+    const realCurrentMonthStr = `${kstNow.getFullYear()}-${String(kstNow.getMonth() + 1).padStart(2, '0')}`;
+
+    const end = currentMonth === realCurrentMonthStr
+      ? formatDate(kstNow)
+      : `${currentMonth}-${String(new Date(y, m, 0).getDate()).padStart(2, '0')}`;
+
+    setReportStartDate(`${currentMonth}-01`);
+    setReportEndDate(end);
+  }, [currentMonth]);
 
   const handleOpenUrls = () => {
     const validUrls = urlList.filter(u => u && u.trim() !== '');
@@ -416,6 +437,51 @@ export default function MarketingDashboard() {
       return null;
     }
     return ((current - previous) / previous) * 100;
+  };
+
+  // --- Custom Report Helpers ---
+  const getDateRangeArray = (start, end) => {
+    if (!start || !end || start > end) return [];
+    const dates = [];
+    let cur = new Date(`${start}T00:00:00`);
+    const last = new Date(`${end}T00:00:00`);
+    while (cur <= last) {
+      dates.push(formatDate(cur));
+      cur.setDate(cur.getDate() + 1);
+    }
+    return dates;
+  };
+
+  const getRangeBreakdown = (categoryKey, dates) => {
+    const category = UI_STRUCTURE[categoryKey];
+    return category.columns.map(col => ({
+      id: col.id,
+      label: col.label,
+      icon: col.icon,
+      fields: col.fields.map(f => {
+        let sum = 0;
+        dates.forEach(ds => {
+          const ym = ds.substring(0, 7);
+          const day = allData[ym]?.[col.id]?.[ds] || {};
+          sum += Number(day[f.id]) || 0;
+        });
+        return { id: f.id, label: f.label, type: f.type, value: sum };
+      })
+    }));
+  };
+
+  const getCampaignsInRange = (start, end) => {
+    if (!start || !end) return [];
+    const results = [];
+    Object.keys(allData).forEach(ym => {
+      if (ym === 'config') return;
+      (allData[ym]?.campaigns || []).forEach(c => {
+        if (!c.period || !c.period.includes(' ~ ')) return;
+        const [s, e] = c.period.split(' ~ ').map(x => x.replace(/\./g, '-'));
+        if (s <= end && e >= start) results.push(c);
+      });
+    });
+    return results.sort((a, b) => a.period.localeCompare(b.period));
   };
 
   const deleteCampaign = async (internalId) => {
@@ -1943,6 +2009,148 @@ export default function MarketingDashboard() {
     );
   };
 
+  const renderReportSection = (categoryKey, dates) => {
+    const category = UI_STRUCTURE[categoryKey];
+    const breakdown = getRangeBreakdown(categoryKey, dates);
+    if (!breakdown.some(col => col.fields.some(f => f.value > 0))) return null;
+
+    return (
+      <div key={categoryKey} className="mb-10 break-inside-avoid">
+        <h4 className="text-sm font-black text-gray-900 mb-4 flex items-center gap-2">{category.icon} {category.title}</h4>
+        <div className="overflow-x-auto rounded-2xl border border-gray-100">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="text-left text-[10px] font-black text-gray-400 uppercase bg-gray-50">
+                <th className="py-3 px-4">채널</th>
+                <th className="py-3 px-4">항목</th>
+                <th className="py-3 px-4 text-right">합계</th>
+              </tr>
+            </thead>
+            <tbody>
+              {breakdown.map(col => col.fields.map((f, idx) => (
+                <tr key={`${col.id}_${f.id}`} className="border-t border-gray-50">
+                  {idx === 0 && (
+                    <td rowSpan={col.fields.length} className="py-3 px-4 font-bold text-gray-700 align-top whitespace-nowrap">{col.label}</td>
+                  )}
+                  <td className="py-3 px-4 text-gray-500">{f.label}</td>
+                  <td className="py-3 px-4 text-right font-black text-gray-900">{f.value.toLocaleString()}{f.type === 'cost' ? '원' : '건'}</td>
+                </tr>
+              )))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
+  };
+
+  const renderReport = () => {
+    const dates = getDateRangeArray(reportStartDate, reportEndDate);
+    const stats = aggregateData(dates);
+    const campaignsInRange = reportSections.cost ? getCampaignsInRange(reportStartDate, reportEndDate) : [];
+
+    const totalReviews = dates.reduce((sum, ds) => {
+      const ym = ds.substring(0, 7);
+      const sp = allData[ym]?.smartplace?.[ds]?.review || 0;
+      const ct = allData[ym]?.catchtable?.[ds]?.review || 0;
+      return sum + Number(sp) + Number(ct);
+    }, 0);
+
+    const sectionOptions = [
+      { id: 'sales', label: '매출' },
+      { id: 'cost', label: '광고비' },
+      { id: 'inflow', label: '유입' },
+      { id: 'review', label: '리뷰' }
+    ];
+
+    return (
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="print:hidden bg-white rounded-[28px] p-6 border border-gray-100 shadow-sm space-y-5">
+          <div className="flex items-center gap-2">
+            <FileText className="w-5 h-5 text-gray-900" />
+            <h3 className="text-sm font-black text-gray-900">리포트 기간 및 항목 설정</h3>
+          </div>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-4 py-2.5">
+              <span className="text-[10px] font-black text-gray-400">시작일</span>
+              <input type="date" value={reportStartDate} max={reportEndDate || undefined}
+                onChange={e => setReportStartDate(e.target.value)}
+                className="bg-transparent text-sm font-bold text-gray-900 outline-none" />
+            </div>
+            <span className="text-gray-300">~</span>
+            <div className="flex items-center gap-2 bg-gray-50 rounded-2xl px-4 py-2.5">
+              <span className="text-[10px] font-black text-gray-400">종료일</span>
+              <input type="date" value={reportEndDate} min={reportStartDate || undefined}
+                onChange={e => setReportEndDate(e.target.value)}
+                className="bg-transparent text-sm font-bold text-gray-900 outline-none" />
+            </div>
+
+            <div className="flex items-center gap-1.5 ml-auto flex-wrap">
+              {sectionOptions.map(sec => (
+                <button key={sec.id}
+                  onClick={() => setReportSections(prev => ({ ...prev, [sec.id]: !prev[sec.id] }))}
+                  className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all ${reportSections[sec.id] ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-400 hover:bg-gray-100'}`}>
+                  {sec.label}
+                </button>
+              ))}
+            </div>
+
+            <button onClick={() => window.print()} className="flex items-center gap-2 px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-black transition-all">
+              <FileText className="w-4 h-4" /> PDF로 저장 / 인쇄
+            </button>
+          </div>
+        </div>
+
+        {dates.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-24 text-center bg-white rounded-[28px] border border-gray-100">
+            <AlertCircle className="w-12 h-12 text-gray-200 mb-4" />
+            <p className="text-gray-400 font-bold">시작일과 종료일을 선택해주세요.</p>
+          </div>
+        ) : (
+          <div className="bg-white rounded-[28px] p-10 border border-gray-100 shadow-sm print:shadow-none print:border-none">
+            <div className="flex justify-between items-start mb-10 pb-6 border-b border-gray-100">
+              <div>
+                <h2 className="text-2xl font-black text-gray-900">마케팅 성과 리포트</h2>
+                <p className="text-sm text-gray-400 font-bold mt-1">{reportStartDate} ~ {reportEndDate}</p>
+              </div>
+              <div className="text-right text-[11px] text-gray-400 font-bold">
+                <p>담당자: {mainManager}</p>
+                <p>생성일: {formatDate(new Date())}</p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-10">
+              <ReportStat label="총 매출" value={stats.revenue} unit="원" />
+              <ReportStat label="총 광고비" value={stats.cost} unit="원" />
+              <ReportStat label="ROAS" value={stats.roas.toFixed(1)} unit="%" />
+              <ReportStat label="총 유입수" value={stats.inflow} unit="회" />
+              <ReportStat label="방문 고객" value={stats.visitorCount} unit="건" />
+              <ReportStat label="신규 리뷰" value={totalReviews} unit="건" />
+            </div>
+
+            {sectionOptions.filter(sec => reportSections[sec.id]).map(sec => renderReportSection(sec.id, dates))}
+
+            {reportSections.cost && campaignsInRange.length > 0 && (
+              <div className="mt-10 break-inside-avoid">
+                <h4 className="text-sm font-black text-gray-900 mb-4">기간 내 진행 캠페인 ({campaignsInRange.length}건)</h4>
+                <div className="space-y-2">
+                  {campaignsInRange.map((c, idx) => (
+                    <div key={idx} className="flex justify-between items-center p-4 bg-gray-50 rounded-2xl text-sm">
+                      <div>
+                        <span className="font-bold text-gray-900">{c.title}</span>
+                        <span className="text-[10px] text-gray-400 ml-2">{c.period}</span>
+                      </div>
+                      <span className="font-black text-gray-900">{(parseFloat(c.cost) || 0).toLocaleString()}원</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const renderCalendar = (categoryKey) => {
     const category = UI_STRUCTURE[categoryKey];
     const [year, month] = currentMonth.split('-').map(Number);
@@ -2649,7 +2857,7 @@ export default function MarketingDashboard() {
     <div className="bg-[#f2f4f6]/40 min-h-screen pb-32 font-sans selection:bg-blue-100 text-gray-900">
       <div className="max-w-[1400px] mx-auto px-6 py-8">
         {/* Main Header / GNB */}
-        <div className="flex justify-between items-center mb-10 pb-6 border-b border-gray-100">
+        <div className="print:hidden flex justify-between items-center mb-10 pb-6 border-b border-gray-100">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg shadow-teal-500/20 border-2 border-white">
               <img src="/profile.png" alt="Profile" className="w-full h-full object-cover" />
@@ -2701,14 +2909,15 @@ export default function MarketingDashboard() {
           </div>
         </div>
 
-        <header className="flex flex-col md:flex-row justify-between items-center gap-6 mb-14">
+        <header className="print:hidden flex flex-col md:flex-row justify-between items-center gap-6 mb-14">
           <div className="flex items-center gap-1 bg-white p-1.5 rounded-[32px] shadow-xl shadow-blue-900/5 border border-gray-100/50 backdrop-blur">
             {[
               { id: 'dashboard', label: '종합분석', icon: <img src="/dashboard_icon.png" alt="Dashboard" className="w-6 h-6 object-contain" /> },
               { id: 'sales', label: '매출데이터', icon: <img src="/icon_rev.png" alt="Revenue" className="w-5 h-5 object-contain" /> },
               { id: 'cost', label: '광고비', icon: <img src="/icon_ad.png" alt="Ad" className="w-5 h-5 object-contain" /> },
               { id: 'inflow', label: '유입 지표', icon: <img src="/icon_users.png" alt="Inflow" className="w-5 h-5 object-contain" /> },
-              { id: 'review', label: '리뷰관리', icon: <img src="/icon_star.png" alt="Review" className="w-5 h-5 object-contain" /> }
+              { id: 'review', label: '리뷰관리', icon: <img src="/icon_star.png" alt="Review" className="w-5 h-5 object-contain" /> },
+              { id: 'report', label: '리포트', icon: <FileText className="w-5 h-5" /> }
             ].map(tab => (
               <button key={tab.id} onClick={() => setActiveTab(tab.id)} className={`flex items-center gap-2 px-5 py-3 rounded-[28px] text-sm font-black whitespace-nowrap transition-all duration-500 ${activeTab === tab.id ? 'bg-gray-900 text-white shadow-2xl scale-[1.05]' : 'text-gray-400 hover:text-gray-900 hover:bg-gray-50'}`}>{tab.icon}{tab.label}</button>
             ))}
@@ -2747,7 +2956,7 @@ export default function MarketingDashboard() {
             <div className="flex flex-col items-center justify-center h-[600px]"><div className="w-14 h-14 border-[6px] border-gray-100 border-t-gray-900 rounded-full animate-spin mb-8 shadow-inner"></div><p className="text-gray-400 font-black tracking-widest text-xs uppercase">Connecting to Database...</p></div>
           ) : (
             <>
-              {activeTab === 'dashboard' ? renderDashboard() : (
+              {activeTab === 'dashboard' ? renderDashboard() : activeTab === 'report' ? renderReport() : (
                 <>
                   {renderSummaryCards(activeTab)}
                   {renderCalendar(activeTab)}
@@ -2816,4 +3025,13 @@ function KpiCard({ title, value, unit, icon, trend, children }) {
 
 function LoadingSpinner() {
   return <div className="flex flex-col items-center justify-center h-[500px]"><div className="w-10 h-10 border-4 border-gray-200 border-t-gray-900 rounded-full animate-spin"></div><p className="mt-4 text-gray-400 font-bold">데이터를 불러오는 중입니다...</p></div>;
+}
+
+function ReportStat({ label, value, unit }) {
+  return (
+    <div className="bg-gray-50 rounded-2xl p-5">
+      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2">{label}</p>
+      <p className="text-xl font-black text-gray-900 tracking-tight">{typeof value === 'number' ? value.toLocaleString() : value}<span className="text-xs text-gray-400 font-bold ml-1">{unit}</span></p>
+    </div>
+  );
 }
