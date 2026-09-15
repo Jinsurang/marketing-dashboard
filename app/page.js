@@ -2630,8 +2630,8 @@ export default function MarketingDashboard() {
                     </div>
                   );
                 })()
-              ) : ((col.id === 'smartplace' || col.id === 'meta') && categoryKey === 'cost') ? (
-                // Custom Breakdown for Ad Platforms (Cost Tab) - Naver & Meta
+              ) : ((col.id === 'smartplace' || col.id === 'meta' || col.id === 'karrot') && categoryKey === 'cost') ? (
+                // Custom Breakdown for Ad Platforms (Cost Tab) - Naver, Meta & Karrot
                 (() => {
                   // Total Spend (Campaigns)
                   let totalSpend = 0;
@@ -2655,7 +2655,7 @@ export default function MarketingDashboard() {
                     <div className="space-y-6">
                       <div className="flex flex-col">
                         <span className="text-xs font-black text-gray-900 mb-1 flex items-center gap-1">
-                          <span className={`w-1.5 h-1.5 rounded-full ${col.id === 'smartplace' ? 'bg-emerald-500' : 'bg-blue-500'}`}></span> 광고비 총액
+                          <span className={`w-1.5 h-1.5 rounded-full ${col.id === 'smartplace' ? 'bg-emerald-500' : col.id === 'meta' ? 'bg-blue-500' : 'bg-orange-500'}`}></span> 광고비 총액
                         </span>
                         <div className="flex items-baseline gap-1.5">
                           <span className="text-3xl font-black text-gray-900 tracking-tighter">{totalSpend.toLocaleString()}</span>
