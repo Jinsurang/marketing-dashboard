@@ -176,6 +176,14 @@ export default function MarketingDashboard() {
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [targetDate, setTargetDate] = useState(formatDate(new Date()));
 
+  const [todayLabel, setTodayLabel] = useState('');
+  useEffect(() => {
+    const now = new Date();
+    const kst = new Date(now.getTime() + (now.getTimezoneOffset() * 60000) + (9 * 60 * 60000));
+    const weekday = ['일', '월', '화', '수', '목', '금', '토'][kst.getDay()];
+    setTodayLabel(`${kst.getFullYear()}년 ${kst.getMonth() + 1}월 ${kst.getDate()}일 (${weekday})`);
+  }, []);
+
   // --- Weekly AI Insight Report (stored under the 'report' key, written by the AI agent) ---
   const [aiReport, setAiReport] = useState({ html: '', periodStart: '', periodEnd: '' });
   const [isReportEditorOpen, setIsReportEditorOpen] = useState(false);
@@ -316,9 +324,9 @@ export default function MarketingDashboard() {
         py = y - 1;
       }
 
-      const currentMaxDay = Math.max(...dates.map(d => parseInt(d.split('-')[2])));
+      // Compare against the same elapsed span of the previous month (1st ~ today for the live month)
       const pLastDay = new Date(py, pm, 0).getDate();
-      const compareDays = Math.min(currentMaxDay, pLastDay);
+      const compareDays = Math.min(refDate.getDate(), pLastDay);
 
       for (let i = 1; i <= compareDays; i++) {
         prevDates.push(`${py}-${String(pm).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
@@ -1899,7 +1907,8 @@ export default function MarketingDashboard() {
 
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
-        <div className="flex flex-wrap gap-2 mb-2 p-1.5 bg-gray-100/50 rounded-2xl w-fit">
+        <div className="flex flex-wrap items-center gap-4 mb-2">
+        <div className="flex flex-wrap gap-2 p-1.5 bg-gray-100/50 rounded-2xl w-fit">
           {rangeOptions.map(opt => (
             <button
               key={opt.id}
@@ -1912,6 +1921,15 @@ export default function MarketingDashboard() {
               {opt.label}
             </button>
           ))}
+        </div>
+        {isThisMonth && previousDates.length > 0 && (() => {
+          const md = (d) => `${parseInt(d.split('-')[1])}.${parseInt(d.split('-')[2])}`;
+          return (
+            <span className="text-[10px] font-bold text-gray-400">
+              증감률은 전월 동일기간 <span className="text-gray-700">({md(previousDates[0])} ~ {md(previousDates[previousDates.length - 1])})</span> 대비
+            </span>
+          );
+        })()}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -2765,9 +2783,12 @@ export default function MarketingDashboard() {
             <div className="w-10 h-10 rounded-2xl overflow-hidden shadow-lg shadow-teal-500/20 border-2 border-white">
               <img src="/profile.png" alt="Profile" className="w-full h-full object-cover" />
             </div>
-            <h1 className="text-xl font-black tracking-tight text-gray-900">
-              작은따옴표 <span className="text-gray-400 font-bold ml-1">마케팅 대시보드</span>
-            </h1>
+            <div>
+              <h1 className="text-xl font-black tracking-tight text-gray-900">
+                작은따옴표 <span className="text-gray-400 font-bold ml-1">마케팅 대시보드</span>
+              </h1>
+              <p className="text-3xl font-black tracking-tighter text-gray-900 mt-1 min-h-[36px]">{todayLabel}</p>
+            </div>
           </div>
 
           <div className="flex gap-8">
