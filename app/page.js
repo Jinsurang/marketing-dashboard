@@ -331,7 +331,8 @@ export default function MarketingDashboard() {
       for (let i = 1; i <= compareDays; i++) {
         prevDates.push(`${py}-${String(pm).padStart(2, '0')}-${String(i).padStart(2, '0')}`);
       }
-      return { current: dates, previous: prevDates };
+      // trendCurrent is trimmed to the same day count so a 31-day month never gets extra days over a 30-day one
+      return { current: dates, previous: prevDates, trendCurrent: dates.slice(0, compareDays) };
     }
     else if (range === '1week') days = 7;
     else if (range === '1month') days = 31; // Rolling 1 Month (e.g. Jan 26 ~ Dec 26)
@@ -1697,18 +1698,19 @@ export default function MarketingDashboard() {
   };
 
   const renderDashboard = () => {
-    const { current: currentDates, previous: previousDates } = getDatesForRange(selectedRange);
+    const { current: currentDates, previous: previousDates, trendCurrent } = getDatesForRange(selectedRange);
     const curr = aggregateData(currentDates);
     const prev = aggregateData(previousDates);
+    const currTrend = trendCurrent ? aggregateData(trendCurrent) : curr;
 
     const isThisMonth = selectedRange === 'thisMonth';
 
     const trends = {
-      cost: isThisMonth ? calculateTrend(curr.cost, prev.cost) : null,
-      inflow: isThisMonth ? calculateTrend(curr.inflow, prev.inflow) : null,
-      revenue: isThisMonth ? calculateTrend(curr.revenue, prev.revenue) : null,
-      visitor: isThisMonth ? calculateTrend(curr.visitor, prev.visitor) : null,
-      roas: isThisMonth ? (curr.roas - prev.roas) : null
+      cost: isThisMonth ? calculateTrend(currTrend.cost, prev.cost) : null,
+      inflow: isThisMonth ? calculateTrend(currTrend.inflow, prev.inflow) : null,
+      revenue: isThisMonth ? calculateTrend(currTrend.revenue, prev.revenue) : null,
+      visitor: isThisMonth ? calculateTrend(currTrend.visitor, prev.visitor) : null,
+      roas: isThisMonth ? (currTrend.roas - prev.roas) : null
     };
 
 
@@ -1907,8 +1909,7 @@ export default function MarketingDashboard() {
 
     return (
       <div className="space-y-8 animate-in fade-in duration-500">
-        <div className="flex flex-wrap items-center gap-4 mb-2">
-        <div className="flex flex-wrap gap-2 p-1.5 bg-gray-100/50 rounded-2xl w-fit">
+        <div className="flex flex-wrap gap-2 mb-2 p-1.5 bg-gray-100/50 rounded-2xl w-fit">
           {rangeOptions.map(opt => (
             <button
               key={opt.id}
@@ -1921,15 +1922,6 @@ export default function MarketingDashboard() {
               {opt.label}
             </button>
           ))}
-        </div>
-        {isThisMonth && previousDates.length > 0 && (() => {
-          const md = (d) => `${parseInt(d.split('-')[1])}.${parseInt(d.split('-')[2])}`;
-          return (
-            <span className="text-[10px] font-bold text-gray-400">
-              증감률은 전월 동일기간 <span className="text-gray-700">({md(previousDates[0])} ~ {md(previousDates[previousDates.length - 1])})</span> 대비
-            </span>
-          );
-        })()}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
@@ -2924,18 +2916,21 @@ function KpiCard({ title, value, unit, icon, trend, children }) {
         <div className="group-hover:scale-110 transition-transform duration-500">
           {React.cloneElement(icon, { className: "w-9 h-9 object-contain" })}
         </div>
-        <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${trendColor}`}>
-          {isTrendValid ? (
-            isZero ? (
-              <span className="text-[10px] font-black px-1">0%</span>
+        <div className="flex flex-col items-end gap-1">
+          {isTrendValid && <span className="text-[9px] font-light text-gray-400 tracking-tight">지난 달 동일기간 대비</span>}
+          <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg ${trendColor}`}>
+            {isTrendValid ? (
+              isZero ? (
+                <span className="text-[10px] font-black px-1">0%</span>
+              ) : (
+                <div className="flex items-center text-[10px] font-black gap-1">
+                  {isUp && '+'}{isDown && '-'}{Math.abs(trend).toFixed(1)}%
+                </div>
+              )
             ) : (
-              <div className="flex items-center text-[10px] font-black gap-1">
-                {isUp && '+'}{isDown && '-'}{Math.abs(trend).toFixed(1)}%
-              </div>
-            )
-          ) : (
-            <span className="text-[10px] font-black px-1">-</span>
-          )}
+              <span className="text-[10px] font-black px-1">-</span>
+            )}
+          </div>
         </div>
       </div>
       <div>
