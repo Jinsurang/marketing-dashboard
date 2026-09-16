@@ -196,10 +196,18 @@ export default function MarketingDashboard() {
   const [expandedPlatform, setExpandedPlatform] = useState(null);
   const [activePlaceTab, setActivePlaceTab] = useState('hq'); // For Smart Place dual location
   const [urlList, setUrlList] = useState(Array(7).fill('')); // Max 7 URLs
+  const [urlLabels, setUrlLabels] = useState(Array(7).fill(''));
   const [showUrlModal, setShowUrlModal] = useState(false); // URL Config Modal
 
   // Load URLs from LocalStorage
   useEffect(() => {
+    const savedLabels = localStorage.getItem('dashboard_url_labels');
+    if (savedLabels) {
+      try {
+        const parsed = JSON.parse(savedLabels);
+        if (Array.isArray(parsed)) setUrlLabels([...parsed, ...Array(7).fill('')].slice(0, 7));
+      } catch (e) { console.error("Failed to load URL labels", e); }
+    }
     const saved = localStorage.getItem('dashboard_urls');
     if (saved) {
       try {
@@ -245,10 +253,18 @@ export default function MarketingDashboard() {
     });
   };
 
-  const saveUrls = (newUrls) => {
+  const saveUrls = (newUrls, newLabels = urlLabels) => {
     setUrlList(newUrls);
+    setUrlLabels(newLabels);
     localStorage.setItem('dashboard_urls', JSON.stringify(newUrls));
+    localStorage.setItem('dashboard_url_labels', JSON.stringify(newLabels));
     setShowUrlModal(false);
+  };
+
+  const handleUrlLabelInput = (index, value) => {
+    const next = [...urlLabels];
+    next[index] = value;
+    setUrlLabels(next);
   };
 
   const handleUrlInput = (index, value) => {
@@ -1262,22 +1278,31 @@ export default function MarketingDashboard() {
 
           <div className="flex flex-col gap-3 mb-8 max-h-[400px] overflow-y-auto px-1">
             {urlList.map((url, i) => (
-              <div key={i} className="flex item-center gap-3">
-                <span className="text-sm font-black text-gray-400 w-6 py-3 text-center">{i + 1}</span>
-                <input
-                  type="text"
-                  value={url}
-                  onChange={(e) => handleUrlInput(i, e.target.value)}
-                  placeholder="https://..."
-                  className="flex-1 bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-gray-300"
-                />
+              <div key={i} className="flex items-start gap-3">
+                <span className="text-sm font-black text-gray-400 w-6 py-2.5 text-center">{i + 1}</span>
+                <div className="flex-1 flex flex-col gap-1.5">
+                  <input
+                    type="text"
+                    value={urlLabels[i]}
+                    onChange={(e) => handleUrlLabelInput(i, e.target.value)}
+                    placeholder="제목 (예: 캐치테이블 월간 통계)"
+                    className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-xs font-bold text-gray-700 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-gray-300"
+                  />
+                  <input
+                    type="text"
+                    value={url}
+                    onChange={(e) => handleUrlInput(i, e.target.value)}
+                    placeholder="https://..."
+                    className="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-3 text-sm font-bold text-gray-900 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 transition-all placeholder:text-gray-300"
+                  />
+                </div>
               </div>
             ))}
           </div>
 
           <div className="flex gap-3">
-            <button onClick={() => setUrlList(Array(7).fill(''))} className="px-6 py-4 rounded-xl font-black text-gray-500 hover:bg-gray-100 transition-all">초기화</button>
-            <button onClick={() => saveUrls(urlList)} className="flex-1 bg-gray-900 text-white py-4 rounded-xl font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-900/20 active:scale-[0.98]">설정 저장하기</button>
+            <button onClick={() => { setUrlList(Array(7).fill('')); setUrlLabels(Array(7).fill('')); }} className="px-6 py-4 rounded-xl font-black text-gray-500 hover:bg-gray-100 transition-all">초기화</button>
+            <button onClick={() => saveUrls(urlList, urlLabels)} className="flex-1 bg-gray-900 text-white py-4 rounded-xl font-black hover:bg-gray-800 transition-all shadow-lg shadow-gray-900/20 active:scale-[0.98]">설정 저장하기</button>
           </div>
         </div>
       </div>
