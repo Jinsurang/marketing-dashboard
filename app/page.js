@@ -34,7 +34,8 @@ import {
   Sparkles,
   List,
   Settings,
-  Users
+  Users,
+  Download
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -557,6 +558,55 @@ export default function MarketingDashboard() {
   const openReportEditor = () => {
     setReportDraft({ ...aiReport });
     setIsReportEditorOpen(true);
+  };
+
+  const downloadReportPdf = () => {
+    if (!aiReport.html) return;
+    const period = aiReport.periodStart && aiReport.periodEnd ? `${aiReport.periodStart} ~ ${aiReport.periodEnd}` : '';
+    const fileTitle = `주간_AI_인사이트_리포트${aiReport.periodStart ? `_${aiReport.periodStart}` : ''}`;
+    const doc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${fileTitle}</title>
+<style>
+  @page { size: A4; margin: 18mm 16mm; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; color: #111827; font-size: 13px; line-height: 1.7; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111827; padding-bottom: 12px; margin-bottom: 24px; }
+  .brand { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: #6b7280; text-transform: uppercase; }
+  h1.title { font-size: 24px; font-weight: 900; margin: 4px 0 0; letter-spacing: -.02em; }
+  .period { font-size: 13px; font-weight: 700; color: #2563eb; margin-top: 4px; }
+  .meta { text-align: right; font-size: 11px; color: #6b7280; font-weight: 600; line-height: 1.6; }
+  .body h1, .body h2, .body h3, .body h4, .body h5, .body h6 { font-weight: 900; margin: 20px 0 8px; letter-spacing: -.01em; break-after: avoid; }
+  .body h1 { font-size: 20px; } .body h2 { font-size: 18px; } .body h3 { font-size: 16px; }
+  .body h4, .body h5, .body h6 { font-size: 14px; }
+  .body > :first-child { margin-top: 0; }
+  .body p { margin: 0 0 10px; }
+  .body ul, .body ol { margin: 0 0 12px; padding-left: 22px; }
+  .body li { margin-bottom: 4px; }
+  .body strong { font-weight: 800; }
+  .body a { color: #2563eb; }
+  .body table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 12px; break-inside: avoid; }
+  .body th, .body td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
+  .body th { background: #f3f4f6; font-weight: 800; }
+  .foot { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
+</style></head><body>
+  <div class="head">
+    <div>
+      <div class="brand">작은따옴표 · Marketing</div>
+      <h1 class="title">주간 AI 인사이트 리포트</h1>
+      ${period ? `<div class="period">수집기간 ${period}</div>` : ''}
+    </div>
+    <div class="meta">담당자 ${mainManager}<br>출력일 ${formatDate(new Date())}</div>
+  </div>
+  <div class="body">${aiReport.html}</div>
+  <div class="foot"><span>작은따옴표 마케팅 대시보드</span><span>주간 AI 인사이트 리포트${period ? ` · ${period}` : ''}</span></div>
+</body></html>`;
+
+    const win = window.open('', '_blank');
+    if (!win) { alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해주세요.'); return; }
+    win.document.open();
+    win.document.write(doc);
+    win.document.close();
+    win.focus();
+    setTimeout(() => win.print(), 300);
   };
 
   const saveAiReport = async () => {
@@ -2074,9 +2124,15 @@ export default function MarketingDashboard() {
                 </p>
               </div>
             </div>
-            <button onClick={openReportEditor} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all shrink-0" title="리포트 HTML 편집">
-              <Edit2 className="w-4 h-4" />
-            </button>
+            <div className="flex items-center gap-2 shrink-0">
+              <button onClick={downloadReportPdf} disabled={!aiReport.html}
+                className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-white/10 rounded-xl transition-all text-xs font-black" title="PDF로 저장 / 인쇄">
+                <Download className="w-4 h-4" /> PDF 다운로드
+              </button>
+              <button onClick={openReportEditor} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all" title="리포트 HTML 편집">
+                <Edit2 className="w-4 h-4" />
+              </button>
+            </div>
           </div>
           {aiReport.html ? (
             <div className="ai-report-body text-gray-200 text-sm leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: aiReport.html }} />
