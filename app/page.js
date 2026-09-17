@@ -566,9 +566,14 @@ export default function MarketingDashboard() {
     const fileTitle = `주간_AI_인사이트_리포트${aiReport.periodStart ? `_${aiReport.periodStart}` : ''}`;
     const doc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${fileTitle}</title>
 <style>
-  @page { size: A4; margin: 18mm 16mm; }
+  @page { size: A4; margin: 20mm 24mm; }
   * { box-sizing: border-box; }
-  body { margin: 0; font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; color: #111827; font-size: 13px; line-height: 1.7; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  html, body { margin: 0; padding: 0; }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; color: #111827; font-size: 12.5px; line-height: 1.75; word-break: keep-all; overflow-wrap: anywhere; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  /* Screen: show a real A4 sheet. Print: @page margins give every page the same 162mm text column; max-width keeps it even if the dialog sets margins to none. */
+  @media screen { body { background: #e5e7eb; padding: 32px 16px; } .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 24mm; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.12); } }
+  @media print { .sheet { width: auto; max-width: 162mm; margin: 0 auto; padding: 0; } }
+  img { max-width: 100%; height: auto; }
   .head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111827; padding-bottom: 12px; margin-bottom: 24px; }
   .brand { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: #6b7280; text-transform: uppercase; }
   h1.title { font-size: 24px; font-weight: 900; margin: 4px 0 0; letter-spacing: -.02em; }
@@ -583,11 +588,12 @@ export default function MarketingDashboard() {
   .body li { margin-bottom: 4px; }
   .body strong { font-weight: 800; }
   .body a { color: #2563eb; }
-  .body table { width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 12px; break-inside: avoid; }
+  .body table { width: 100%; max-width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 11.5px; break-inside: avoid; }
   .body th, .body td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
   .body th { background: #f3f4f6; font-weight: 800; }
   .foot { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
 </style></head><body>
+<div class="sheet">
   <div class="head">
     <div>
       <div class="brand">작은따옴표 · Marketing</div>
@@ -598,6 +604,7 @@ export default function MarketingDashboard() {
   </div>
   <div class="body">${aiReport.html}</div>
   <div class="foot"><span>작은따옴표 마케팅 대시보드</span><span>주간 AI 인사이트 리포트${period ? ` · ${period}` : ''}</span></div>
+</div>
 </body></html>`;
 
     const win = window.open('', '_blank');
