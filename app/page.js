@@ -627,14 +627,74 @@ export default function MarketingDashboard() {
 </div>
 </body></html>`;
 
+    // Snapshot how the report is laid out on screen before opening the print window
+    const screenLayout = captureScreenLayout(reportBodyRef.current);
+
     const win = window.open('', '_blank');
     if (!win) { alert('팝업이 차단되었습니다. 이 사이트의 팝업을 허용해주세요.'); return; }
     win.document.open();
     win.document.write(doc);
     win.document.close();
-    convertReportToLightMode(win.document.querySelector('.body'));
+    const printBody = win.document.querySelector('.body');
+    applyScreenLayout(printBody, screenLayout, (printableMm / 25.4) * 96);
+    convertReportToLightMode(printBody);
     win.focus();
     setTimeout(() => win.print(), 300);
+  };
+
+  // The agent's HTML is responsive, and the print viewport (A4 width) is narrower than the dashboard, so
+  // grids collapse to one column on paper. Record each grid's on-screen column tracks so print can reuse them.
+  const captureScreenLayout = (root) => {
+    if (!root) return { width: 0, grids: [] };
+    const view = root.ownerDocument.defaultView;
+    const grids = [root, ...root.querySelectorAll('*')].map(el => {
+      const cs = view.getComputedStyle(el);
+      if (!cs.display.includes('grid')) return null;
+      const tracks = cs.gridTemplateColumns.split(' ').map(parseFloat).filter(n => !isNaN(n));
+      return tracks.length ? tracks : null;
+    });
+    return { width: root.clientWidth, grids };
+  };
+
+  const applyScreenLayout = (root, layout, printViewportPx) => {
+    if (!root || !layout.width) return;
+    const doc = root.ownerDocument;
+    const view = doc.defaultView;
+
+    // Re-evaluate width media queries against the on-screen width instead of the paper width
+    Array.from(doc.styleSheets).forEach(sheet => {
+      let rules;
+      try { rules = sheet.cssRules; } catch (e) { return; }
+      for (let i = rules.length - 1; i >= 0; i--) {
+        const rule = rules[i];
+        if (!(rule instanceof view.CSSMediaRule)) continue;
+        const media = rule.media.mediaText;
+        const max = media.match(/\(max-width:\s*([\d.]+)px\)/);
+        const min = media.match(/\(min-width:\s*([\d.]+)px\)/);
+        if (!max && !min) continue;
+        const matchesOnScreen = (!max || layout.width <= parseFloat(max[1])) && (!min || layout.width >= parseFloat(min[1]));
+        const matchesOnPaper = (!max || printViewportPx <= parseFloat(max[1])) && (!min || printViewportPx >= parseFloat(min[1]));
+        if (matchesOnScreen === matchesOnPaper) continue;
+        if (matchesOnScreen) {
+          const inner = Array.from(rule.cssRules).map(r => r.cssText);
+          sheet.deleteRule(i);
+          inner.forEach((text, j) => { try { sheet.insertRule(text, i + j); } catch (e) { /* skip unsupported rule */ } });
+        } else {
+          sheet.deleteRule(i);
+        }
+      }
+    });
+
+    // Same HTML string on both sides, so elements line up by document order
+    [root, ...root.querySelectorAll('*')].forEach((el, idx) => {
+      const tracks = layout.grids[idx];
+      if (!tracks) return;
+      const cs = view.getComputedStyle(el);
+      if (!cs.display.includes('grid')) return;
+      const printCount = cs.gridTemplateColumns.split(' ').filter(Boolean).length;
+      if (printCount === tracks.length) return;
+      el.style.setProperty('grid-template-columns', tracks.map(px => `minmax(0, ${Math.round(px)}fr)`).join(' '), 'important');
+    });
   };
 
   // The agent styles the report for the dark dashboard card; on paper, flip dark surfaces and light text
