@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import {
   BarChart3,
   Wallet,
@@ -35,7 +35,9 @@ import {
   List,
   Settings,
   Users,
-  Download
+  Download,
+  Sun,
+  Moon
 } from 'lucide-react';
 import {
   Chart as ChartJS,
@@ -187,6 +189,19 @@ export default function MarketingDashboard() {
 
   // --- Weekly AI Insight Report (stored under the 'report' key, written by the AI agent) ---
   const [aiReport, setAiReport] = useState({ html: '', periodStart: '', periodEnd: '' });
+  const [reportTheme, setReportTheme] = useState('dark');
+  const reportBodyRef = useRef(null);
+  useEffect(() => {
+    try { const saved = localStorage.getItem('ai_report_theme'); if (saved === 'light' || saved === 'dark') setReportTheme(saved); } catch (e) { /* ignore */ }
+  }, []);
+  const changeReportTheme = (theme) => {
+    setReportTheme(theme);
+    try { localStorage.setItem('ai_report_theme', theme); } catch (e) { /* ignore */ }
+  };
+  // The body is keyed by theme so switching back to dark remounts the agent's untouched HTML
+  useEffect(() => {
+    if (reportTheme === 'light' && reportBodyRef.current) convertReportToLightMode(reportBodyRef.current);
+  }, [reportTheme, aiReport.html]);
   const [isReportEditorOpen, setIsReportEditorOpen] = useState(false);
   const [reportDraft, setReportDraft] = useState({ html: '', periodStart: '', periodEnd: '' });
 
@@ -617,14 +632,15 @@ export default function MarketingDashboard() {
     win.document.open();
     win.document.write(doc);
     win.document.close();
-    convertReportToLightMode(win.document);
+    convertReportToLightMode(win.document.querySelector('.body'));
     win.focus();
     setTimeout(() => win.print(), 300);
   };
 
   // The agent styles the report for the dark dashboard card; on paper, flip dark surfaces and light text
   // to print colours while keeping (and darkening) the red/green/yellow signal colours.
-  const convertReportToLightMode = (doc) => {
+  const convertReportToLightMode = (root) => {
+    if (!root) return;
     const parse = (s) => {
       const m = s && s.match(/rgba?\(([^)]+)\)/);
       if (!m) return null;
@@ -635,9 +651,9 @@ export default function MarketingDashboard() {
     const sat = ({ r, g, b }) => { const mx = Math.max(r, g, b); return mx === 0 ? 0 : (mx - Math.min(r, g, b)) / mx; };
     const darken = ({ r, g, b }) => `rgb(${Math.round(r * 0.6)},${Math.round(g * 0.6)},${Math.round(b * 0.6)})`;
     const set = (el, prop, val) => el.style.setProperty(prop, val, 'important');
-    const view = doc.defaultView;
+    const view = root.ownerDocument.defaultView;
 
-    doc.querySelectorAll('.body, .body *').forEach(el => {
+    [root, ...root.querySelectorAll('*')].forEach(el => {
       const cs = view.getComputedStyle(el);
 
       if (cs.backgroundImage !== 'none') set(el, 'background-image', 'none');
@@ -2164,11 +2180,15 @@ export default function MarketingDashboard() {
           </div>
         </div>
 
-        <div className="bg-gradient-to-br from-gray-900 to-gray-800 rounded-[32px] p-8 text-white relative overflow-hidden flex flex-col justify-center">
-          <div className="absolute top-0 right-0 p-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+        {(() => {
+          const isLight = reportTheme === 'light';
+          const toolBtn = isLight ? 'bg-gray-100 hover:bg-gray-200 text-gray-700' : 'bg-white/10 hover:bg-white/20';
+          return (
+        <div className={`rounded-[32px] p-8 relative overflow-hidden flex flex-col justify-center transition-colors ${isLight ? 'bg-white border border-gray-100 shadow-sm text-gray-900' : 'bg-gradient-to-br from-gray-900 to-gray-800 text-white'}`}>
+          {!isLight && <div className="absolute top-0 right-0 p-32 bg-blue-500/10 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>}
           <div className="flex justify-between items-start mb-4 gap-4">
             <div className="flex items-center gap-3">
-              <div className="bg-blue-600 p-2 rounded-xl"><Sparkles className="w-4 h-4" /></div>
+              <div className="bg-blue-600 p-2 rounded-xl text-white"><Sparkles className="w-4 h-4" /></div>
               <div>
                 <h4 className="text-lg font-bold">주간 AI 인사이트 리포트</h4>
                 <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mt-0.5">
@@ -2177,21 +2197,31 @@ export default function MarketingDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2 shrink-0">
+              <div className={`flex items-center p-1 rounded-xl ${isLight ? 'bg-gray-100' : 'bg-white/10'}`} title="화면 표시 모드 (PDF는 항상 라이트로 출력)">
+                <button onClick={() => changeReportTheme('dark')} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition-all ${!isLight ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-gray-700'}`}>
+                  <Moon className="w-3.5 h-3.5" /> 다크
+                </button>
+                <button onClick={() => changeReportTheme('light')} className={`flex items-center gap-1 px-2.5 py-1.5 rounded-lg text-[11px] font-black transition-all ${isLight ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-400 hover:text-white'}`}>
+                  <Sun className="w-3.5 h-3.5" /> 라이트
+                </button>
+              </div>
               <button onClick={downloadReportPdf} disabled={!aiReport.html}
-                className="flex items-center gap-1.5 px-3.5 py-2.5 bg-white/10 hover:bg-white/20 disabled:opacity-30 disabled:hover:bg-white/10 rounded-xl transition-all text-xs font-black" title="PDF로 저장 / 인쇄">
+                className={`flex items-center gap-1.5 px-3.5 py-2.5 ${toolBtn} disabled:opacity-30 rounded-xl transition-all text-xs font-black`} title="PDF로 저장 / 인쇄 (라이트 모드로 출력)">
                 <Download className="w-4 h-4" /> PDF 다운로드
               </button>
-              <button onClick={openReportEditor} className="p-2.5 bg-white/10 hover:bg-white/20 rounded-xl transition-all" title="리포트 HTML 편집">
+              <button onClick={openReportEditor} className={`p-2.5 ${toolBtn} rounded-xl transition-all`} title="리포트 HTML 편집">
                 <Edit2 className="w-4 h-4" />
               </button>
             </div>
           </div>
           {aiReport.html ? (
-            <div className="ai-report-body text-gray-200 text-sm leading-relaxed font-medium" dangerouslySetInnerHTML={{ __html: aiReport.html }} />
+            <div key={reportTheme} ref={reportBodyRef} className={`ai-report-body ${isLight ? 'ai-report-light text-gray-700' : 'text-gray-200'} text-sm leading-relaxed font-medium`} dangerouslySetInnerHTML={{ __html: aiReport.html }} />
           ) : (
-            <p className="text-gray-500 text-sm font-medium py-6 text-center border border-dashed border-white/10 rounded-2xl">아직 작성된 리포트가 없습니다. 편집 버튼을 눌러 HTML을 입력하세요.</p>
+            <p className={`text-gray-500 text-sm font-medium py-6 text-center border border-dashed rounded-2xl ${isLight ? 'border-gray-200' : 'border-white/10'}`}>아직 작성된 리포트가 없습니다. 편집 버튼을 눌러 HTML을 입력하세요.</p>
           )}
         </div>
+          );
+        })()}
       </div>
     );
   };

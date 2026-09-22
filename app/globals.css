@@ -44,9 +44,12 @@ body {
   }
 
   /* Agent-authored report HTML: restore semantics that Tailwind preflight resets */
+  .ai-report-body { --rp-fg: #fff; --rp-link: #60a5fa; --rp-border: rgba(255, 255, 255, .1); --rp-th-bg: rgba(255, 255, 255, .05); }
+  .ai-report-body.ai-report-light { --rp-fg: #111827; --rp-link: #2563eb; --rp-border: #e5e7eb; --rp-th-bg: #f3f4f6; }
   .ai-report-body h1, .ai-report-body h2, .ai-report-body h3,
   .ai-report-body h4, .ai-report-body h5, .ai-report-body h6 {
-    @apply font-black text-white mt-4 mb-2 first:mt-0;
+    @apply font-black mt-4 mb-2 first:mt-0;
+    color: var(--rp-fg);
   }
   .ai-report-body h1 { @apply text-xl; }
   .ai-report-body h2 { @apply text-lg; }
@@ -54,9 +57,9 @@ body {
   .ai-report-body p { @apply mb-3 last:mb-0; }
   .ai-report-body ul { @apply list-disc pl-5 mb-3 space-y-1; }
   .ai-report-body ol { @apply list-decimal pl-5 mb-3 space-y-1; }
-  .ai-report-body strong { @apply text-white font-black; }
-  .ai-report-body a { @apply text-blue-400 underline; }
+  .ai-report-body strong { @apply font-black; color: var(--rp-fg); }
+  .ai-report-body a { @apply underline; color: var(--rp-link); }
   .ai-report-body table { @apply w-full text-xs mb-3 border-collapse; }
-  .ai-report-body th, .ai-report-body td { @apply border border-white/10 px-2 py-1.5 text-left; }
-  .ai-report-body th { @apply bg-white/5 font-black text-white; }
+  .ai-report-body th, .ai-report-body td { @apply px-2 py-1.5 text-left; border: 1px solid var(--rp-border); }
+  .ai-report-body th { @apply font-black; background: var(--rp-th-bg); color: var(--rp-fg); }
 }
