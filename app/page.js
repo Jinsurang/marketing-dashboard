@@ -564,34 +564,39 @@ export default function MarketingDashboard() {
     if (!aiReport.html) return;
     const period = aiReport.periodStart && aiReport.periodEnd ? `${aiReport.periodStart} ~ ${aiReport.periodEnd}` : '';
     const fileTitle = `주간_AI_인사이트_리포트${aiReport.periodStart ? `_${aiReport.periodStart}` : ''}`;
+    // Lay the body out at a PC-like width and zoom it to the printable width (190mm) so it keeps its on-screen proportions
+    const PAGE_MARGIN_MM = 10;
+    const LAYOUT_PX = 960;
+    const printableMm = 210 - PAGE_MARGIN_MM * 2;
+    const zoom = ((printableMm / 25.4) * 96) / LAYOUT_PX;
     const doc = `<!doctype html><html lang="ko"><head><meta charset="utf-8"><title>${fileTitle}</title>
 <style>
-  @page { size: A4; margin: 20mm 24mm; }
+  @page { size: A4; margin: ${PAGE_MARGIN_MM}mm; }
   * { box-sizing: border-box; }
   html, body { margin: 0; padding: 0; }
-  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; color: #111827; font-size: 12.5px; line-height: 1.75; word-break: keep-all; overflow-wrap: anywhere; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-  /* Screen: show a real A4 sheet. Print: @page margins give every page the same 162mm text column; max-width keeps it even if the dialog sets margins to none. */
-  @media screen { body { background: #e5e7eb; padding: 32px 16px; } .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; padding: 20mm 24mm; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.12); } }
-  @media print { .sheet { width: auto; max-width: 162mm; margin: 0 auto; padding: 0; } }
+  body { font-family: Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", "Noto Sans KR", sans-serif; color: #111827; font-size: 13px; line-height: 1.6; word-break: keep-all; overflow-wrap: anywhere; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  @media screen { body { background: #e5e7eb; padding: 32px 16px; } .sheet { width: 210mm; min-height: 297mm; margin: 0 auto; padding: ${PAGE_MARGIN_MM}mm; background: #fff; box-shadow: 0 10px 40px rgba(0,0,0,.12); } }
+  @media print { .sheet { width: auto; max-width: ${printableMm}mm; margin: 0 auto; padding: 0; } }
   img { max-width: 100%; height: auto; }
-  .head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111827; padding-bottom: 12px; margin-bottom: 24px; }
-  .brand { font-size: 11px; font-weight: 800; letter-spacing: .12em; color: #6b7280; text-transform: uppercase; }
-  h1.title { font-size: 24px; font-weight: 900; margin: 4px 0 0; letter-spacing: -.02em; }
-  .period { font-size: 13px; font-weight: 700; color: #2563eb; margin-top: 4px; }
-  .meta { text-align: right; font-size: 11px; color: #6b7280; font-weight: 600; line-height: 1.6; }
+  .head { display: flex; justify-content: space-between; align-items: flex-end; border-bottom: 2px solid #111827; padding-bottom: 8px; margin-bottom: 12px; }
+  .brand { font-size: 10px; font-weight: 800; letter-spacing: .12em; color: #6b7280; text-transform: uppercase; }
+  h1.title { font-size: 20px; font-weight: 900; margin: 2px 0 0; letter-spacing: -.02em; }
+  .period { font-size: 12px; font-weight: 700; color: #2563eb; margin-top: 2px; }
+  .meta { text-align: right; font-size: 10px; color: #6b7280; font-weight: 600; line-height: 1.6; }
+  .body { width: ${LAYOUT_PX}px; zoom: ${zoom.toFixed(4)}; }
   .body h1, .body h2, .body h3, .body h4, .body h5, .body h6 { font-weight: 900; margin: 20px 0 8px; letter-spacing: -.01em; break-after: avoid; }
-  .body h1 { font-size: 20px; } .body h2 { font-size: 18px; } .body h3 { font-size: 16px; }
-  .body h4, .body h5, .body h6 { font-size: 14px; }
+  .body h1 { font-size: 22px; } .body h2 { font-size: 19px; } .body h3 { font-size: 17px; }
+  .body h4, .body h5, .body h6 { font-size: 15px; }
   .body > :first-child { margin-top: 0; }
   .body p { margin: 0 0 10px; }
   .body ul, .body ol { margin: 0 0 12px; padding-left: 22px; }
   .body li { margin-bottom: 4px; }
   .body strong { font-weight: 800; }
   .body a { color: #2563eb; }
-  .body table { width: 100%; max-width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 11.5px; break-inside: avoid; }
+  .body table { width: 100%; max-width: 100%; border-collapse: collapse; margin: 0 0 14px; font-size: 12px; break-inside: avoid; }
   .body th, .body td { border: 1px solid #e5e7eb; padding: 6px 10px; text-align: left; }
   .body th { background: #f3f4f6; font-weight: 800; }
-  .foot { margin-top: 32px; padding-top: 10px; border-top: 1px solid #e5e7eb; font-size: 10px; color: #9ca3af; display: flex; justify-content: space-between; }
+  .foot { margin-top: 16px; padding-top: 8px; border-top: 1px solid #e5e7eb; font-size: 9px; color: #9ca3af; display: flex; justify-content: space-between; }
 </style></head><body>
 <div class="sheet">
   <div class="head">
@@ -612,8 +617,48 @@ export default function MarketingDashboard() {
     win.document.open();
     win.document.write(doc);
     win.document.close();
+    convertReportToLightMode(win.document);
     win.focus();
     setTimeout(() => win.print(), 300);
+  };
+
+  // The agent styles the report for the dark dashboard card; on paper, flip dark surfaces and light text
+  // to print colours while keeping (and darkening) the red/green/yellow signal colours.
+  const convertReportToLightMode = (doc) => {
+    const parse = (s) => {
+      const m = s && s.match(/rgba?\(([^)]+)\)/);
+      if (!m) return null;
+      const [r, g, b, a = 1] = m[1].split(',').map(Number);
+      return { r, g, b, a };
+    };
+    const lum = ({ r, g, b }) => (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
+    const sat = ({ r, g, b }) => { const mx = Math.max(r, g, b); return mx === 0 ? 0 : (mx - Math.min(r, g, b)) / mx; };
+    const darken = ({ r, g, b }) => `rgb(${Math.round(r * 0.6)},${Math.round(g * 0.6)},${Math.round(b * 0.6)})`;
+    const set = (el, prop, val) => el.style.setProperty(prop, val, 'important');
+    const view = doc.defaultView;
+
+    doc.querySelectorAll('.body, .body *').forEach(el => {
+      const cs = view.getComputedStyle(el);
+
+      if (cs.backgroundImage !== 'none') set(el, 'background-image', 'none');
+      if (cs.boxShadow !== 'none') set(el, 'box-shadow', 'none');
+
+      const bg = parse(cs.backgroundColor);
+      if (bg && bg.a > 0 && lum(bg) < 0.5) {
+        // Near-black outer surfaces become paper; slightly lighter inner tiles keep a faint grey so they stay distinct
+        set(el, 'background-color', lum(bg) < 0.12 ? '#ffffff' : '#f3f4f6');
+      }
+
+      const c = parse(cs.color);
+      if (c) {
+        if (c.a < 0.8) set(el, 'color', '#6b7280');
+        else if (sat(c) < 0.3) { if (lum(c) > 0.35) set(el, 'color', lum(c) > 0.75 ? '#111827' : '#4b5563'); }
+        else if (lum(c) > 0.45) set(el, 'color', darken(c));
+      }
+
+      const bc = parse(cs.borderTopColor);
+      if (bc && bc.a > 0 && cs.borderTopWidth !== '0px' && (lum(bc) < 0.5 || sat(bc) < 0.3)) set(el, 'border-color', '#e5e7eb');
+    });
   };
 
   const saveAiReport = async () => {
