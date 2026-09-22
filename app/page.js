@@ -648,32 +648,50 @@ export default function MarketingDashboard() {
       return { r, g, b, a };
     };
     const lum = ({ r, g, b }) => (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255;
-    const sat = ({ r, g, b }) => { const mx = Math.max(r, g, b); return mx === 0 ? 0 : (mx - Math.min(r, g, b)) / mx; };
+    // HSL saturation: dark navy/slate surfaces score ~0.2-0.35, real colours (bars, chips, badges) 0.5+
+    const sat = ({ r, g, b }) => {
+      const mx = Math.max(r, g, b) / 255, mn = Math.min(r, g, b) / 255;
+      const d = mx - mn;
+      return d === 0 ? 0 : d / (1 - Math.abs(mx + mn - 1));
+    };
+    const isGreyishDark = (col) => lum(col) < 0.5 && (sat(col) < 0.45 || lum(col) < 0.08);
     const darken = ({ r, g, b }) => `rgb(${Math.round(r * 0.6)},${Math.round(g * 0.6)},${Math.round(b * 0.6)})`;
     const set = (el, prop, val) => el.style.setProperty(prop, val, 'important');
     const view = root.ownerDocument.defaultView;
+    const stopAt = root.parentElement;
+    // Nearest painted background behind an element; ancestors are already converted because we walk in document order
+    const surfaceBehind = (el) => {
+      for (let n = el; n && n !== stopAt; n = n.parentElement) {
+        const bg = parse(view.getComputedStyle(n).backgroundColor);
+        if (bg && bg.a > 0) return bg;
+      }
+      return { r: 255, g: 255, b: 255, a: 1 };
+    };
 
     [root, ...root.querySelectorAll('*')].forEach(el => {
       const cs = view.getComputedStyle(el);
+      const isSurface = el.children.length > 0;
 
-      if (cs.backgroundImage !== 'none') set(el, 'background-image', 'none');
+      // Gradients on containers are dark-theme decoration; on leaf elements they ARE the bar/segment, so keep those
+      if (isSurface && cs.backgroundImage !== 'none') set(el, 'background-image', 'none');
       if (cs.boxShadow !== 'none') set(el, 'box-shadow', 'none');
 
       const bg = parse(cs.backgroundColor);
-      if (bg && bg.a > 0 && lum(bg) < 0.5) {
+      if (bg && bg.a > 0 && isGreyishDark(bg)) {
         // Near-black outer surfaces become paper; slightly lighter inner tiles keep a faint grey so they stay distinct
         set(el, 'background-color', lum(bg) < 0.12 ? '#ffffff' : '#f3f4f6');
       }
 
+      // Only recolour text that now sits on a light surface; text on a kept colour (blue chip, badge) stays as authored
       const c = parse(cs.color);
-      if (c) {
+      if (c && lum(surfaceBehind(el)) > 0.55) {
         if (c.a < 0.8) set(el, 'color', '#6b7280');
-        else if (sat(c) < 0.3) { if (lum(c) > 0.35) set(el, 'color', lum(c) > 0.75 ? '#111827' : '#4b5563'); }
+        else if (sat(c) < 0.45) { if (lum(c) > 0.35) set(el, 'color', lum(c) > 0.75 ? '#111827' : '#4b5563'); }
         else if (lum(c) > 0.45) set(el, 'color', darken(c));
       }
 
       const bc = parse(cs.borderTopColor);
-      if (bc && bc.a > 0 && cs.borderTopWidth !== '0px' && (lum(bc) < 0.5 || sat(bc) < 0.3)) set(el, 'border-color', '#e5e7eb');
+      if (bc && bc.a > 0 && cs.borderTopWidth !== '0px' && (isGreyishDark(bc) || (sat(bc) < 0.45 && lum(bc) > 0.5))) set(el, 'border-color', '#e5e7eb');
     });
   };
 
