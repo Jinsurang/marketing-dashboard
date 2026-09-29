@@ -714,7 +714,8 @@ export default function MarketingDashboard() {
       const d = mx - mn;
       return d === 0 ? 0 : d / (1 - Math.abs(mx + mn - 1));
     };
-    const isGreyishDark = (col) => lum(col) < 0.5 && (sat(col) < 0.45 || lum(col) < 0.08);
+    // Very dark colours are surfaces whatever their hue (slate/navy cards score ~0.47 saturation); bars are never that dark
+    const isGreyishDark = (col) => lum(col) < 0.5 && (sat(col) < 0.45 || lum(col) < 0.16);
     const darken = ({ r, g, b }) => `rgb(${Math.round(r * 0.6)},${Math.round(g * 0.6)},${Math.round(b * 0.6)})`;
     const set = (el, prop, val) => el.style.setProperty(prop, val, 'important');
     const view = root.ownerDocument.defaultView;
@@ -736,16 +737,22 @@ export default function MarketingDashboard() {
       if (isSurface && cs.backgroundImage !== 'none') set(el, 'background-image', 'none');
       if (cs.boxShadow !== 'none') set(el, 'box-shadow', 'none');
 
+      // Dark theme mutes inactive chips with opacity; on paper that fades grey text into the page, so mute by colour instead
+      const muted = parseFloat(cs.opacity) < 0.8;
+      if (muted) set(el, 'opacity', '1');
+
       const bg = parse(cs.backgroundColor);
       if (bg && bg.a > 0 && isGreyishDark(bg)) {
-        // Near-black outer surfaces become paper; slightly lighter inner tiles keep a faint grey so they stay distinct
-        set(el, 'background-color', lum(bg) < 0.12 ? '#ffffff' : '#f3f4f6');
+        const isChip = el.offsetHeight > 0 && el.offsetHeight <= 48 && el.offsetWidth <= 420;
+        // Chips/badges keep a visible fill so a selected one still reads as selected; large surfaces become paper,
+        // slightly lighter inner tiles keep a faint grey so they stay distinct
+        set(el, 'background-color', isChip && !muted ? '#e5e7eb' : lum(bg) < 0.12 && !isChip ? '#ffffff' : '#f3f4f6');
       }
 
       // Only recolour text that now sits on a light surface; text on a kept colour (blue chip, badge) stays as authored
       const c = parse(cs.color);
       if (c && lum(surfaceBehind(el)) > 0.55) {
-        if (c.a < 0.8) set(el, 'color', '#6b7280');
+        if (muted || c.a < 0.8) set(el, 'color', '#6b7280');
         else if (sat(c) < 0.45) { if (lum(c) > 0.35) set(el, 'color', lum(c) > 0.75 ? '#111827' : '#4b5563'); }
         else if (lum(c) > 0.45) set(el, 'color', darken(c));
       }
