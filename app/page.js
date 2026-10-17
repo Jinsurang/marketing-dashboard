@@ -1953,6 +1953,9 @@ export default function MarketingDashboard() {
     ];
 
     // --- Dynamic Chart Data ---
+    // Days that haven't happened yet are gaps, not zeros, so lines stop instead of dropping to the floor
+    const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
+    const isFutureDate = (ds) => selectedRange === 'thisMonth' && ds >= todayStr;
     const lineData = {
       labels: currentDates.map(d => {
         const [y, m, day] = d.split('-');
@@ -1963,8 +1966,7 @@ export default function MarketingDashboard() {
           label: '매출',
           type: 'bar', // Change Revenue to Bar
           data: currentDates.map(ds => {
-            const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
-            if (selectedRange === 'thisMonth' && ds >= todayStr) return null;
+            if (isFutureDate(ds)) return null;
             const ym = ds.substring(0, 7);
             const mData = allData[ym] || {};
             const val = Object.keys(mData).reduce((acc, p) => {
@@ -1995,8 +1997,7 @@ export default function MarketingDashboard() {
           label: '광고비',
           type: 'line',
           data: currentDates.map(ds => {
-            const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
-            if (selectedRange === 'thisMonth' && ds >= todayStr) return null;
+            if (isFutureDate(ds)) return null;
             const ym = ds.substring(0, 7);
             const mData = allData[ym] || {};
             const val = Object.keys(mData).reduce((acc, p) => acc + (p !== 'campaigns' ? (mData[p]?.[ds]?.cost || 0) : 0), 0);
@@ -2018,6 +2019,7 @@ export default function MarketingDashboard() {
           yAxisID: 'right', // Right Axis
           type: 'line',
           data: currentDates.map(ds => {
+            if (isFutureDate(ds)) return null;
             const ym = ds.substring(0, 7);
             const mData = allData[ym] || {};
             return Object.keys(mData).reduce((acc, p) => {
@@ -2055,6 +2057,7 @@ export default function MarketingDashboard() {
         {
           label: '네이버 검색광고 (CTR)',
           data: currentDates.map(ds => {
+            if (isFutureDate(ds)) return null;
             const ym = ds.substring(0, 7);
             const daily = parseFloat(allData[ym]?.smartplace?.[ds]?.ctr) || 0;
             if (daily > 0) return daily;
@@ -2072,6 +2075,7 @@ export default function MarketingDashboard() {
         {
           label: '메타광고 (CTR)',
           data: currentDates.map(ds => {
+            if (isFutureDate(ds)) return null;
             const ym = ds.substring(0, 7);
             const daily = parseFloat(allData[ym]?.meta?.[ds]?.ctr) || 0;
             if (daily > 0) return daily;
@@ -2088,6 +2092,7 @@ export default function MarketingDashboard() {
         {
           label: '당근 광고 (CTR)',
           data: currentDates.map(ds => {
+            if (isFutureDate(ds)) return null;
             const ym = ds.substring(0, 7);
             const daily = parseFloat(allData[ym]?.karrot?.[ds]?.ctr) || 0;
             if (daily > 0) return daily;
