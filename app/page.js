@@ -2022,7 +2022,7 @@ export default function MarketingDashboard() {
             if (isFutureDate(ds)) return null;
             const ym = ds.substring(0, 7);
             const mData = allData[ym] || {};
-            const total = Object.keys(mData).reduce((acc, p) => {
+            return Object.keys(mData).reduce((acc, p) => {
               if (p === 'campaigns') return acc;
               const d = mData[p]?.[ds] || {};
               if (p === 'smartplace') {
@@ -2030,7 +2030,6 @@ export default function MarketingDashboard() {
               }
               return acc + (d.reservation || 0) + (d.walkin || 0);
             }, 0);
-            return total > 0 ? total : null;
           }),
           borderColor: '#298AD5', // Blue
           borderDash: [5, 5],
@@ -2068,7 +2067,7 @@ export default function MarketingDashboard() {
               const [start, end] = c.period.split(' ~ ').map(s => s.replace(/\./g, '-'));
               return ds >= start && ds <= end;
             });
-            return camp ? parseFloat(camp.ctr) || null : null;
+            return camp ? parseFloat(camp.ctr) || 0 : 0;
           }),
           borderColor: '#03C75A',
           unit: '%'
@@ -2085,7 +2084,7 @@ export default function MarketingDashboard() {
               const [start, end] = c.period.split(' ~ ').map(s => s.replace(/\./g, '-'));
               return ds >= start && ds <= end;
             });
-            return camp ? parseFloat(camp.ctr) || null : null;
+            return camp ? parseFloat(camp.ctr) || 0 : 0;
           }),
           borderColor: '#0668E1',
           unit: '%'
@@ -2102,7 +2101,7 @@ export default function MarketingDashboard() {
               const [start, end] = c.period.split(' ~ ').map(s => s.replace(/\./g, '-'));
               return ds >= start && ds <= end;
             });
-            return camp ? parseFloat(camp.ctr) || null : null;
+            return camp ? parseFloat(camp.ctr) || 0 : 0;
           }),
           borderColor: '#FF6F0F',
           unit: '%'
