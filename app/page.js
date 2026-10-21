@@ -1956,6 +1956,32 @@ export default function MarketingDashboard() {
     // Days that haven't happened yet are gaps, not zeros, so lines stop instead of dropping to the floor
     const todayStr = new Date().toLocaleDateString('en-CA', { timeZone: 'Asia/Seoul' });
     const isFutureDate = (ds) => selectedRange === 'thisMonth' && ds >= todayStr;
+    // A day that was never entered is a gap (null); a recorded 0 is a real 0 and stays on the chart
+    const hasValue = (v) => v !== undefined && v !== null && v !== '';
+    const inflowFor = (ds) => {
+      if (isFutureDate(ds)) return null;
+      const mData = allData[ds.substring(0, 7)] || {};
+      let total = 0, entered = false;
+      Object.keys(mData).forEach(p => {
+        if (p === 'campaigns') return;
+        const d = mData[p]?.[ds] || {};
+        const fields = p === 'smartplace' ? ['hq_exposure', 'dorim_exposure'] : ['reservation', 'walkin'];
+        fields.forEach(f => { if (hasValue(d[f])) { entered = true; total += parseFloat(d[f]) || 0; } });
+      });
+      return entered ? total : null;
+    };
+    const ctrFor = (platform, ds) => {
+      if (isFutureDate(ds)) return null;
+      const daily = allData[ds.substring(0, 7)]?.[platform]?.[ds]?.ctr;
+      const dailyVal = hasValue(daily) ? parseFloat(daily) || 0 : null;
+      if (dailyVal > 0) return dailyVal;
+      const camp = (monthlyData.campaigns || []).find(c => {
+        if (c.platform !== platform || !hasValue(c.ctr) || !c.period) return false;
+        const [start, end] = c.period.split(' ~ ').map(s => s.replace(/\./g, '-'));
+        return ds >= start && ds <= end;
+      });
+      return camp ? parseFloat(camp.ctr) || 0 : dailyVal;
+    };
     const lineData = {
       labels: currentDates.map(d => {
         const [y, m, day] = d.split('-');
@@ -2018,19 +2044,7 @@ export default function MarketingDashboard() {
           label: '유입량',
           yAxisID: 'right', // Right Axis
           type: 'line',
-          data: currentDates.map(ds => {
-            if (isFutureDate(ds)) return null;
-            const ym = ds.substring(0, 7);
-            const mData = allData[ym] || {};
-            return Object.keys(mData).reduce((acc, p) => {
-              if (p === 'campaigns') return acc;
-              const d = mData[p]?.[ds] || {};
-              if (p === 'smartplace') {
-                return acc + (parseFloat(d.hq_exposure) || 0) + (parseFloat(d.dorim_exposure) || 0);
-              }
-              return acc + (d.reservation || 0) + (d.walkin || 0);
-            }, 0);
-          }),
+          data: currentDates.map(inflowFor),
           borderColor: '#298AD5', // Blue
           borderDash: [5, 5],
           borderWidth: 2,
@@ -2056,53 +2070,19 @@ export default function MarketingDashboard() {
       datasets: [
         {
           label: '네이버 검색광고 (CTR)',
-          data: currentDates.map(ds => {
-            if (isFutureDate(ds)) return null;
-            const ym = ds.substring(0, 7);
-            const daily = parseFloat(allData[ym]?.smartplace?.[ds]?.ctr) || 0;
-            if (daily > 0) return daily;
-            // Fallback to campaign (simplified for line chart)
-            const camp = (monthlyData.campaigns || []).find(c => {
-              if (c.platform !== 'smartplace' || !c.ctr) return false;
-              const [start, end] = c.period.split(' ~ ').map(s => s.replace(/\./g, '-'));
-              return ds >= start && ds <= end;
-            });
-            return camp ? parseFloat(camp.ctr) || 0 : 0;
-          }),
+          data: currentDates.map(ds => ctrFor('smartplace', ds)),
           borderColor: '#03C75A',
           unit: '%'
         },
         {
           label: '메타광고 (CTR)',
-          data: currentDates.map(ds => {
-            if (isFutureDate(ds)) return null;
-            const ym = ds.substring(0, 7);
-            const daily = parseFloat(allData[ym]?.meta?.[ds]?.ctr) || 0;
-            if (daily > 0) return daily;
-            const camp = (monthlyData.campaigns || []).find(c => {
-              if (c.platform !== 'meta' || !c.ctr) return false;
-              const [start, end] = c.period.split(' ~ ').map(s => s.replace(/\./g, '-'));
-              return ds >= start && ds <= end;
-            });
-            return camp ? parseFloat(camp.ctr) || 0 : 0;
-          }),
+          data: currentDates.map(ds => ctrFor('meta', ds)),
           borderColor: '#0668E1',
           unit: '%'
         },
         {
           label: '당근 광고 (CTR)',
-          data: currentDates.map(ds => {
-            if (isFutureDate(ds)) return null;
-            const ym = ds.substring(0, 7);
-            const daily = parseFloat(allData[ym]?.karrot?.[ds]?.ctr) || 0;
-            if (daily > 0) return daily;
-            const camp = (monthlyData.campaigns || []).find(c => {
-              if (c.platform !== 'karrot' || !c.ctr) return false;
-              const [start, end] = c.period.split(' ~ ').map(s => s.replace(/\./g, '-'));
-              return ds >= start && ds <= end;
-            });
-            return camp ? parseFloat(camp.ctr) || 0 : 0;
-          }),
+          data: currentDates.map(ds => ctrFor('karrot', ds)),
           borderColor: '#FF6F0F',
           unit: '%'
         }
